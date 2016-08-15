@@ -1,0 +1,556 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package dit;
+import dit.panels.AuditPanel;
+import dit.panels.DeidentifyProgressPanel;
+import dit.panels.QCPanel;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+
+/**
+ *
+ * @author angelo
+ */
+public class ReSkullStrippingFrame extends javax.swing.JFrame {
+
+    private WarningJdialog wjd;
+    private ArrayList<NIHImage> selection = new ArrayList<>();
+    private NIHImage selectedFile = null;
+    private String gzFileOutputDir = DeidData.outputPath + "betOut" + File.separator;
+    
+    
+    /**
+     * Creates new form ReSkullStrippingFrame
+     */
+    public ReSkullStrippingFrame() {
+        initComponents();
+
+        jTableImages.setModel(new AbstractTableModel() {
+            // <editor-fold defaultstate="collapsed" desc="AuditTableModel">
+            private String[] columnNames = new String[]{"Selected", "Image"};
+
+            @Override
+            public int getRowCount() {
+                return DeidData.imageHandler.getInputFilesSize();
+            }
+
+            @Override
+            public int getColumnCount() {
+                return columnNames.length;
+            }
+
+            @Override
+            public String getColumnName(int i) {
+                return columnNames[i];
+            }
+
+            @Override
+            public Class getColumnClass(int i) {
+                Class colClass;
+                switch (i) {
+                    case 0:
+                        colClass = Boolean.class;
+                        break;
+                    case 1:
+                        colClass = NIHImage.class;
+                        break;
+                    default:
+                        colClass = Object.class;
+                }
+                return colClass;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return (col == 0 ? true : false);
+            }
+
+            @Override
+            public Object getValueAt(int row, int col) {
+                Object value;
+                switch (col) {
+                    case 0:
+                        value = DeidData.imageHandler.getInputFiles().get(row).isNeedRedefaced();
+                        break;
+                    case 1:
+                        value = DeidData.imageHandler.getInputFiles().get(row);
+                        break;
+                    default:
+                        value = "Error";
+                        break;
+                }
+                return value;
+            }
+
+            @Override
+            public void setValueAt(Object o, int row, int col) {
+                if (col == 0) {
+                    DeidData.imageHandler.getInputFiles().get(row).setNeedRedefaced((Boolean) o);
+                }
+            }
+            // </editor-fold>
+        });
+        // Add a selection listener for enabling/disabling the "View Header" button
+        jTableImages.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        jTableImages.getSelectionModel().addListSelectionListener(
+                new ListSelectionListener() {
+                    // <editor-fold defaultstate="collapsed" desc="AuditTableSelectionListener">
+                    @Override
+                    public void valueChanged(ListSelectionEvent lse) {
+                        if (lse.getValueIsAdjusting()) {
+                            if(selectedFile != null){
+                                selectedFile.emptySet();
+                            }
+                            //NIHImage [] selection = jTableImages.getSelectedRows();
+                           // NIHImage [] selection = DeidData.imageHandler.getInputFiles().get();
+                    //jButtonViewHeader.setEnabled(
+                            //   DeidData.ConvertedDicomHeaderTable.containsKey(selectedFile)
+                            //  ? true : false);
+                            selectedFile = DeidData.imageHandler.getInputFiles().get(jTableImages.getSelectedRow());
+                           
+                                ((NiftiDisplayPanel) jPanel1).setImage(selectedFile);
+                        
+                            
+                            
+                        }
+                    }
+                    // </editor-fold>
+                });
+
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTableImages = new AuditJTable();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jButton3 = new javax.swing.JButton();
+        jProgressBar1 = new javax.swing.JProgressBar();
+        jPanel1 = new NiftiDisplayPanel();
+        jSliderSlice = new javax.swing.JSlider();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
+
+        setTitle("Re-Skull-Stripping");
+
+        jTableImages.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                { new Boolean(true), "File1"},
+                {null, "File2"},
+                { new Boolean(true), "File3"},
+                {null, "File4"}
+            },
+            new String [] {
+                "Selected", "File"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Boolean.class, java.lang.Object.class
+            };
+            boolean[] canEdit = new boolean [] {
+                true, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane1.setViewportView(jTableImages);
+
+        jButton1.setText("Select All");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton2.setText("Unselect All");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        jLabel1.setText("Threshold Option (0.0~1.0)");
+
+        jTextField1.setText("0.1");
+
+        jButton3.setText("Start");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
+        jPanel1.setMinimumSize(new java.awt.Dimension(0, 32));
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 145, Short.MAX_VALUE)
+        );
+
+        jSliderSlice.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                jSliderSliceStateChanged(evt);
+            }
+        });
+
+        jLabel2.setText("Select the images to be re-skull-stripped");
+
+        jLabel3.setText("Press Start to redo skull-stripping");
+
+        jButton4.setText("Reset");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+
+        jButton5.setLabel("Done");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField1)
+                            .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addComponent(jButton5)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButton4)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 82, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel3)
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addComponent(jSliderSlice, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap())))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(13, 13, 13)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(jButton2))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jSliderSlice, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(15, 15, 15)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton3)
+                    .addComponent(jButton4)
+                    .addComponent(jButton5))
+                .addGap(28, 28, 28))
+        );
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void jSliderSliceStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSliderSliceStateChanged
+        if (jTableImages.getSelectedRow() >= 0) {
+            ((NiftiDisplayPanel) jPanel1).setSlice((float) jSliderSlice.getValue() / 100f);
+        }
+    }//GEN-LAST:event_jSliderSliceStateChanged
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // select all button
+        for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
+            image.setNeedRedefaced(true);
+        }
+        jTableImages.repaint();
+       
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // unselect all button
+        for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
+            image.setNeedRedefaced(false);
+        }
+        jTableImages.repaint();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // start button
+        //jProgressBar1.setValue(0);
+        jButton3.setEnabled(false);
+        
+        
+        if (!redoFlag()) {
+            wjd = new WarningJdialog(new JFrame(), "Warning", "No images selected!");
+
+        } else {
+            jButton5.setEnabled(false);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    jLabel3.setText("ReDefacing...");
+
+                    double d;
+                    if (!jTextField1.getText().trim().equals("")) {
+                        try {
+                            d = Double.parseDouble(jTextField1.getText());
+                            if (d >= 0.0 && d <= 1.0) {
+                                DeidData.defaceThreshold = jTextField1.getText();
+                            }
+                        } catch (Exception e) {
+                            DeidData.defaceThreshold = "0.1";
+                        }
+                    }
+                    
+                    for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
+                        if(image.isNeedRedefaced())
+                            selection.add(image);                     
+                    }
+                    
+                    
+              
+                    
+                    defaceImages();
+
+                    jLabel3.setText("<html><p>Finished. Press Reset<br/> to start another reDefacing.</p></html>");
+                    jProgressBar1.setValue(100);
+                    
+                    jTableImages.repaint();
+                   
+                    
+                   // for (NIHImage image: selection) {
+                        
+                   //     image.initNifti();
+                     
+                  //  }
+                  //  NIHImage selectedFile = DeidData.imageHandler.getInputFiles().get(jTableImages.getSelectedRow());
+                  // ((NiftiDisplayPanel) jPanel1).setImage(selectedFile);
+                    
+                    
+                   if (jTableImages.getSelectedRow() >= 0) {
+                       
+                        ((NiftiDisplayPanel) jPanel1).setImage(selectedFile);
+                       //((NiftiDisplayPanel) jPanel1).setSlice((float) jSliderSlice.getValue() / 100f);
+                   }
+                              
+                  // selectedFile = DeidData.imageHandler.getInputFiles().get(audit.imagesTable.getSelectedRow());             
+                 //   ((NiftiDisplayPanel) imagePanel).setImage(selectedFile);
+                    
+                    //jTableImages.revalidate();
+                   //jTableImages.getSelectionModel().clearSelection();
+                 //jTableImages.getColumnModel().getSelectionModel().clearSelection();
+                // int lastSelected = jTableImages.getSelectedRow();
+                   jTableImages.repaint();
+                   //change montage in the auditpanel.
+                   int tmp;
+                   if ((tmp = AuditPanel.imagesTable.getSelectedRow()) >=0) {
+                   NIHImage selectedFile = DeidData.imageHandler.getInputFiles().get(tmp);
+                   ((NiftiDisplayPanel)AuditPanel.imagePanel).setImage(selectedFile);
+                }
+                   jButton5.setEnabled(true);
+                // jTableImages.clearSelection();
+                 // AuditPanel.imagesTable.valueChanged(null);
+                //TableImages.changeSelection(lastSelected, 1, false, false);
+                }
+                //this.jButton3.setEnabled(true);
+            }).start();
+        }
+
+
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        // Reset button
+        jLabel3.setText("Press Start to redo skull-stripping");
+        this.jButton3.setEnabled(true);
+        //this.jButton5.setEnabled(true);
+        jProgressBar1.setValue(0);
+
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // Done button
+        jButton5.setEnabled(false);
+        for (NIHImage image : selection) {
+          //  if (image.isNeedRedefaced()) {  //////////////////potential bug
+            image.initNifti();
+            //    System.out.println("fuckkk");
+            QCPanel.createMontage(image);
+            image.emptySet();
+        //    }
+            image.setNeedRedefaced(false);
+        }
+        System.out.println("I am going to write montage file");
+        QCPanel.writeMontageFile();
+        DeidData.defaceThreshold = "0.1";
+        this.setVisible(false);
+        jButton5.setEnabled(true);
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private boolean redoFlag() {
+        boolean flag = false;
+        for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
+            if (image.isNeedRedefaced()) {
+                flag = true;
+                break;
+            }
+            //jTableImages.setValueAt(new Boolean(false), ndx, 0);
+        }
+        return flag;
+
+    }
+    
+    
+    private void convertToAnalyze(NIHImage image) {
+      
+           
+                String outPath = gzFileOutputDir + "tmp" + image.getImageFormalName();
+             
+          //  image.setAPI.printHeader()
+                try {
+                    if (image.getStoredPotistion().getName().endsWith(".nii")) {
+                        image.initImage();
+                        image.setAPI.readHeader();
+                        image.setAPI.magic = new StringBuffer("ni1\0");
+                   // System.out.println(image.setAPI.magic.length());
+                        byte[] data = image.setAPI.readData();
+                        image.setAPI.ds_hdrname = outPath + ".hdr";
+                        image.setAPI.ds_is_nii = false;
+                        image.setAPI.vox_offset = 0;
+                        image.setAPI.writeHeader();
+                        image.setAPI.ds_datname = outPath + ".img";
+                        image.setAPI.writeData(data);
+                        image.setStoredPotistion(new File(outPath  + ".hdr"));
+                        image.setImageDisplayName(image.getStoredPotistion().getAbsolutePath());
+                    }
+
+                   // image.setImageFormat(FileUtils.getExtension());
+
+
+                } catch (IOException ex) {
+                    Logger.getLogger(DeidentifyProgressPanel.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+            
+        
+
+    }
+    
+    
+    
+
+    private void defaceImages() {
+
+        try {
+            ReDefaceTask defaceTask = new ReDefaceTask();
+            defaceTask.setProgressBar(jProgressBar1);
+            for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
+
+                if (image.isNeedRedefaced()) {
+                    convertToAnalyze(image);
+                    defaceTask.addInputImage(image);
+                }
+            }
+
+            synchronized (defaceTask) {
+                new Thread(defaceTask).start();
+                try {
+                    defaceTask.wait();
+                } catch (InterruptedException ex) {
+                    DEIDGUI.log("bet was interrupted, the defacing result may "
+                            + "be incorrect", DEIDGUI.LOG_LEVEL.WARNING);
+                }
+            }
+
+            DEIDGUI.log("Defaced images");
+        } catch (RuntimeException e) {
+            DEIDGUI.log("Defacing couldn't be started: " + e.getMessage(),
+                    DEIDGUI.LOG_LEVEL.ERROR);
+        }
+    }
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JProgressBar jProgressBar1;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JSlider jSliderSlice;
+    private javax.swing.JTable jTableImages;
+    private javax.swing.JTextField jTextField1;
+    // End of variables declaration//GEN-END:variables
+}
