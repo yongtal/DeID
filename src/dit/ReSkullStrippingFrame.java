@@ -5,19 +5,44 @@
 package dit;
 import dit.panels.AuditPanel;
 import dit.panels.DeidentifyProgressPanel;
+import static dit.panels.LoadImagesPanel.model;
 import dit.panels.QCPanel;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Icon;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 /**
  *
@@ -30,15 +55,54 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
     private NIHImage selectedFile = null;
     private String gzFileOutputDir = DeidData.outputPath + "betOut" + File.separator;
     
-    
     /**
      * Creates new form ReSkullStrippingFrame
      */
     public ReSkullStrippingFrame() {
         initComponents();
+        
+        CheckNode croot = new CheckNode();
+        DefaultMutableTreeNode oldroot = (DefaultMutableTreeNode) AuditPanel.model.getRoot();
+        copyTreeNodes(croot, oldroot);
+        DefaultTreeModel model = new DefaultTreeModel(croot);
+        jTree1.setModel(model);
+        jTree1.setRootVisible(false);
+        jTree1.setCellRenderer(new CheckRenderer());
+        jTree1.getSelectionModel().setSelectionMode(
+          TreeSelectionModel.SINGLE_TREE_SELECTION
+        );
+        jTree1.addMouseListener(new NodeSelectionListener(jTree1));
+        jTree1.addTreeSelectionListener(new TreeSelectionListener() { 
+            // <editor-fold defaultstate="collapsed" desc="jTreeSelectionListener">
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
 
+                if (jTree1.getSelectionCount() > 0 ) {
+                    TreePath path = jTree1.getSelectionPath();
+                    CheckNode node = (CheckNode) (path.getLastPathComponent()); 
+                    if (node.isLeaf()) {    
+                        if (e.getNewLeadSelectionPath() != e.getOldLeadSelectionPath()) {
+                            if(selectedFile != null){
+                                selectedFile.emptySet();
+                            }
+                            /*NIHImage*/ 
+                            selectedFile = (NIHImage)node.getUserObject();
+                            //System.out.println("cursor is  fffff: " + currCursor);
+                            try {    
+                                ((NiftiDisplayPanel)jPanel1).setImage(selectedFile);
+                            } catch (Exception le){
+                                LoggerWrapper.myLogger.log(Level.SEVERE, "Error is {0}", le);
+                                DEIDGUI.log("Failed to load image", DEIDGUI.LOG_LEVEL.ERROR);                        
+                            }
+                        }
+                    }
+                }                        
+            } // </editor-fold>
+        });
+        // <editor-fold defaultstate="collapsed" desc="AuditTableModel--Not in use">
+        /*
         jTableImages.setModel(new AbstractTableModel() {
-            // <editor-fold defaultstate="collapsed" desc="AuditTableModel">
+            
             private String[] columnNames = new String[]{"Selected", "Image"};
 
             @Override
@@ -100,13 +164,18 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
                     DeidData.imageHandler.getInputFiles().get(row).setNeedRedefaced((Boolean) o);
                 }
             }
-            // </editor-fold>
+            
         });
+                 */
+        // </editor-fold> 
+
+        // <editor-fold defaultstate="collapsed" desc="AuditTableSelectionListener">
+        /*
         // Add a selection listener for enabling/disabling the "View Header" button
         jTableImages.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jTableImages.getSelectionModel().addListSelectionListener(
                 new ListSelectionListener() {
-                    // <editor-fold defaultstate="collapsed" desc="AuditTableSelectionListener">
+                    
                     @Override
                     public void valueChanged(ListSelectionEvent lse) {
                         if (lse.getValueIsAdjusting()) {
@@ -126,9 +195,48 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
                             
                         }
                     }
-                    // </editor-fold>
-                });
+                    
+        });
+        */
+        // </editor-fold>
 
+        
+    }
+
+    class NodeSelectionListener extends MouseAdapter {
+        // <editor-fold defaultstate="collapsed" desc="NodeSelectionListener">
+        JTree tree;
+
+        NodeSelectionListener(JTree tree) {
+          this.tree = tree;
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int x = e.getX();
+            int y = e.getY();
+            int row = tree.getRowForLocation(x, y);
+            TreePath  path = tree.getPathForRow(row);
+            //TreePath  path = tree.getSelectionPath();
+            if (path != null) {
+                CheckNode node = (CheckNode)path.getLastPathComponent();
+                boolean isSelected = ! (node.isSelected());
+                node.setSelected(isSelected);
+                if (node.getSelectionMode() == CheckNode.DIG_IN_SELECTION) {
+                    if ( isSelected) {
+                      tree.expandPath(path);   
+                    } else { //unselect one file
+                      tree.collapsePath(path);
+                    }
+                }
+                ((DefaultTreeModel) tree.getModel()).nodeChanged(node);
+                // I need revalidate if node is root.  but why?             
+                tree.revalidate();
+                tree.repaint();
+
+            }
+        }
+        // </editor-fold>
     }
 
     /**
@@ -140,8 +248,6 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTableImages = new AuditJTable();
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
@@ -154,36 +260,10 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTree1 = new javax.swing.JTree();
 
         setTitle("Re-Skull-Stripping");
-
-        jTableImages.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                { new Boolean(true), "File1"},
-                {null, "File2"},
-                { new Boolean(true), "File3"},
-                {null, "File4"}
-            },
-            new String [] {
-                "Selected", "File"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.Boolean.class, java.lang.Object.class
-            };
-            boolean[] canEdit = new boolean [] {
-                true, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        jScrollPane1.setViewportView(jTableImages);
 
         jButton1.setText("Select All");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -220,7 +300,7 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 145, Short.MAX_VALUE)
+            .addGap(0, 164, Short.MAX_VALUE)
         );
 
         jSliderSlice.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -247,6 +327,8 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
             }
         });
 
+        jScrollPane1.setViewportView(jTree1);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -254,12 +336,12 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -286,16 +368,6 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(13, 13, 13)
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton1)
-                    .addComponent(jButton2))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -314,13 +386,23 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
                     .addComponent(jButton4)
                     .addComponent(jButton5))
                 .addGap(28, 28, 28))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(13, 13, 13)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 314, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(jButton2))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void jSliderSliceStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSliderSliceStateChanged
-        if (jTableImages.getSelectedRow() >= 0) {
+        if (/*jTableImages.getSelectedRow() >= 0 ||*/ ((TreeNode) jTree1.getSelectionPath().getLastPathComponent()).isLeaf()) {
             ((NiftiDisplayPanel) jPanel1).setSlice((float) jSliderSlice.getValue() / 100f);
         }
     }//GEN-LAST:event_jSliderSliceStateChanged
@@ -330,8 +412,11 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
         for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
             image.setNeedRedefaced(true);
         }
-        jTableImages.repaint();
-       
+        //jTableImages.repaint();
+        
+        ((CheckNode) jTree1.getModel().getRoot()).setSelected(true);
+        for (int i = 0; i < jTree1.getRowCount(); i++) { jTree1.expandRow(i);} //expand all nodes
+        jTree1.repaint();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -339,7 +424,12 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
         for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
             image.setNeedRedefaced(false);
         }
-        jTableImages.repaint();
+        //jTableImages.repaint();
+        
+        ((CheckNode) jTree1.getModel().getRoot()).setSelected(false);
+        //collapse all row if you want
+        //for (int i = jTree.getRowCount(); i>0; i--){jTree.collapseRow(i);}
+        jTree1.repaint();
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
@@ -350,7 +440,6 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
         
         if (!redoFlag()) {
             wjd = new WarningJdialog(new JFrame(), "Warning", "No images selected!");
-
         } else {
             jButton5.setEnabled(false);
             new Thread(new Runnable() {
@@ -384,7 +473,14 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
                     jLabel3.setText("<html><p>Finished. Press Reset<br/> to start another reDefacing.</p></html>");
                     jProgressBar1.setValue(100);
                     
-                    jTableImages.repaint();
+                    //jTableImages.repaint();
+                    
+                    ((CheckNode) jTree1.getModel().getRoot()).setSelected(false);
+                    for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
+                        if(image.isNeedRedefaced())
+                            ((CheckNode)((Object)image)).setSelected(true);
+                    }
+                    jTree1.repaint();
                    
                     
                    // for (NIHImage image: selection) {
@@ -396,27 +492,37 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
                   // ((NiftiDisplayPanel) jPanel1).setImage(selectedFile);
                     
                     
-                   if (jTableImages.getSelectedRow() >= 0) {
+                    /*
+                   if (jTableImages.getSelectedRow() >= 0 ) {
                        
                         ((NiftiDisplayPanel) jPanel1).setImage(selectedFile);
                        //((NiftiDisplayPanel) jPanel1).setSlice((float) jSliderSlice.getValue() / 100f);
                    }
+                    */
+                    if (jTree1.getSelectionCount() > 0 ) {                       
+                        ((NiftiDisplayPanel) jPanel1).setImage(selectedFile);
+                    }
                               
-                  // selectedFile = DeidData.imageHandler.getInputFiles().get(audit.imagesTable.getSelectedRow());             
-                 //   ((NiftiDisplayPanel) imagePanel).setImage(selectedFile);
-                    
+                    //selectedFile = DeidData.imageHandler.getInputFiles().get(audit.imagesTable.getSelectedRow());             
+                    //((NiftiDisplayPanel) imagePanel).setImage(selectedFile);
+
                     //jTableImages.revalidate();
-                   //jTableImages.getSelectionModel().clearSelection();
-                 //jTableImages.getColumnModel().getSelectionModel().clearSelection();
-                // int lastSelected = jTableImages.getSelectedRow();
-                   jTableImages.repaint();
-                   //change montage in the auditpanel.
-                   int tmp;
-                   if ((tmp = AuditPanel.imagesTable.getSelectedRow()) >=0) {
-                   NIHImage selectedFile = DeidData.imageHandler.getInputFiles().get(tmp);
-                   ((NiftiDisplayPanel)AuditPanel.imagePanel).setImage(selectedFile);
-                }
-                   jButton5.setEnabled(true);
+                    //jTableImages.getSelectionModel().clearSelection();
+                    //jTableImages.getColumnModel().getSelectionModel().clearSelection();
+                    // int lastSelected = jTableImages.getSelectedRow();
+                    //jTableImages.repaint();
+                    //change montage in the auditpanel.
+                    
+                    TreePath path;
+                    if ( (path= AuditPanel.jTree.getSelectionPath()) != null){                    
+                        DefaultMutableTreeNode node = (DefaultMutableTreeNode) (path.getLastPathComponent()); 
+                        if ( node.isLeaf()) { 
+                            ((NiftiDisplayPanel)AuditPanel.imagePanel).setImage((NIHImage)node.getUserObject());
+                        }
+                    }
+                    
+                    jButton5.setEnabled(true);
+                    
                 // jTableImages.clearSelection();
                  // AuditPanel.imagesTable.valueChanged(null);
                 //TableImages.changeSelection(lastSelected, 1, false, false);
@@ -499,10 +605,6 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
                 } catch (IOException ex) {
                     Logger.getLogger(DeidentifyProgressPanel.class.getName()).log(Level.SEVERE, null, ex);
                 }
-
-            
-        
-
     }
     
     
@@ -550,7 +652,217 @@ public class ReSkullStrippingFrame extends javax.swing.JFrame {
     private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSlider jSliderSlice;
-    private javax.swing.JTable jTableImages;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTree jTree1;
     // End of variables declaration//GEN-END:variables
+
+    
+    public class CheckRenderer extends JPanel implements TreeCellRenderer {   
+    // <editor-fold defaultstate="collapsed">
+        protected TreeLabel label;
+        protected JCheckBox check;
+        
+        public CheckRenderer() {
+            setLayout(null);
+            add(check = new JCheckBox());
+            add(label = new TreeLabel());
+            check.setBackground(UIManager.getColor("Tree.textBackground"));
+            label.setForeground(UIManager.getColor("Tree.textForeground"));
+        }
+
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value,
+        boolean isSelected, boolean expanded, boolean leaf, int row,
+        boolean hasFocus) {
+            String stringValue = tree.convertValueToText(value, isSelected,
+                expanded, leaf, row, hasFocus);
+            
+            setEnabled(tree.isEnabled());
+            check.setSelected(((CheckNode) value).isSelected());
+            label.setFont(tree.getFont());
+            stringValue = stringValue.substring(stringValue.lastIndexOf(System.getProperty("file.separator"))+1);
+            label.setText(stringValue);
+            label.setSelected(isSelected);
+            label.setFocus(hasFocus);
+            if (leaf) {
+                label.setIcon(UIManager.getIcon("Tree.leafIcon"));
+                NIHImage image = (NIHImage)((CheckNode) value).getUserObject();
+                String strValue = image.getImageNewName();
+                label.setText(strValue);
+            } else if (expanded) {
+                label.setIcon(UIManager.getIcon("Tree.openIcon"));
+            } else {
+                label.setIcon(UIManager.getIcon("Tree.closedIcon"));
+            }
+            return this;
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+          Dimension d_check = check.getPreferredSize();
+          Dimension d_label = label.getPreferredSize();
+          return new Dimension(d_check.width + d_label.width,
+              (d_check.height < d_label.height ? d_label.height
+                  : d_check.height));
+        }
+
+        @Override
+        public void doLayout() {
+          Dimension d_check = check.getPreferredSize();
+          Dimension d_label = label.getPreferredSize();
+          int y_check = 0;
+          int y_label = 0;
+          if (d_check.height < d_label.height) {
+            y_check = (d_label.height - d_check.height) / 2;
+          } else {
+            y_label = (d_check.height - d_label.height) / 2;
+          }
+          check.setLocation(0, y_check);
+          check.setBounds(0, y_check, d_check.width, d_check.height);
+          label.setLocation(d_check.width, y_label);
+          label.setBounds(d_check.width, y_label, d_label.width, d_label.height);
+        }
+
+        @Override
+        public void setBackground(Color color) {
+          if (color instanceof ColorUIResource)
+            color = null;
+          super.setBackground(color);
+        }
+
+        public class TreeLabel extends JLabel {
+            boolean isSelected;
+            boolean hasFocus;
+
+            public TreeLabel() { }
+            @Override
+            public void setBackground(Color color) {
+              if (color instanceof ColorUIResource)
+                color = null;
+              super.setBackground(color);
+            }
+
+            @Override
+            public void paint(Graphics g) {
+              String str;
+              if ((str = getText()) != null) {
+                if (0 < str.length()) {
+                  if (isSelected) {
+                    g.setColor(UIManager
+                        .getColor("Tree.selectionBackground"));
+                  } else {
+                    g.setColor(UIManager.getColor("Tree.textBackground"));
+                  }
+                  Dimension d = getPreferredSize();
+                  int imageOffset = 0;
+                  Icon currentI = getIcon();
+                  if (currentI != null) {
+                    imageOffset = currentI.getIconWidth()
+                        + Math.max(0, getIconTextGap() - 1);
+                  }
+                  g.fillRect(imageOffset, 0, d.width - 1 - imageOffset,
+                      d.height);
+                  if (hasFocus) {
+                    g.setColor(UIManager
+                        .getColor("Tree.selectionBorderColor"));
+                    g.drawRect(imageOffset, 0, d.width - 1 - imageOffset,
+                        d.height - 1);
+                  }
+                }
+              }
+              super.paint(g);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+              Dimension retDimension = super.getPreferredSize();
+              if (retDimension != null) {
+                retDimension = new Dimension(retDimension.width + 3,
+                    retDimension.height);
+              }
+              return retDimension;
+            }
+
+            public void setSelected(boolean isSelected) {
+              this.isSelected = isSelected;
+            }
+
+            public void setFocus(boolean hasFocus) {
+              this.hasFocus = hasFocus;
+            }
+        }
+    // </editor-fold>
+    }
+   
+    
+    public class CheckNode extends DefaultMutableTreeNode {
+        // <editor-fold defaultstate="collapsed">
+        public final static int SINGLE_SELECTION = 0;
+
+        public final static int DIG_IN_SELECTION = 4;
+
+        protected int selectionMode;
+
+        protected boolean isSelected;
+
+        public CheckNode() {
+            this(null);
+        }
+
+        public CheckNode(Object userObject) {
+            this(userObject, true, false);
+        }
+
+        public CheckNode(Object userObject, boolean allowsChildren,
+            boolean isSelected) {
+            super(userObject, allowsChildren);
+            this.isSelected = isSelected;
+            setSelectionMode(DIG_IN_SELECTION);
+        }
+
+        public void setSelectionMode(int mode) {
+          selectionMode = mode;
+        }
+
+        public int getSelectionMode() {
+          return selectionMode;
+        }
+
+        public void setSelected(boolean isSelected) {
+            this.isSelected = isSelected;
+            if(isLeaf()) {
+                ((NIHImage)getUserObject()).setNeedRedefaced(isSelected);
+            }
+            if ((selectionMode == DIG_IN_SELECTION) && (children != null)) {
+                Enumeration e = children.elements();
+                while (e.hasMoreElements()) {
+                    CheckNode node = (CheckNode) e.nextElement();
+                    node.setSelected(isSelected);
+                }
+            }
+        }
+
+        public boolean isSelected() {
+            return isSelected;
+        }
+
+    // If you want to change "isSelected" by CellEditor,
+    /*
+     public void setUserObject(Object obj) { if (obj instanceof Boolean) {
+     * setSelected(((Boolean)obj).booleanValue()); } else {
+     * super.setUserObject(obj); } }
+     */
+    // </editor-fold>
+    }
+    
+    private void copyTreeNodes (CheckNode node, DefaultMutableTreeNode onode){
+        for (int i = 0; i < onode.getChildCount(); i++){
+            DefaultMutableTreeNode chnode = (DefaultMutableTreeNode)onode.getChildAt(i);
+            node.add(new CheckNode(chnode.getUserObject()));
+            CheckNode nnode = (CheckNode)node.getChildAt(i);                  
+            copyTreeNodes(nnode,chnode);
+        }
+    }
+    
+
 }

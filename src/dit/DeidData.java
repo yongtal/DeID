@@ -41,8 +41,8 @@ public class DeidData {
         }
     }
 
-    public static void addInputFile(File file) {
-        imageHandler.addFile(file);
+    public static boolean addInputFile(File file) {
+        return imageHandler.addFile(file);
     }
 
     private static boolean isExistInputFile(File file) {
@@ -67,7 +67,7 @@ public class DeidData {
     //
     //the var below this line could be ignored//
     //
-    public static Vector<File> inputFiles = new Vector<File>(),
+    public static Vector<File> inputFiles = new Vector<>(),
             niftiFiles = new Vector<File>(),
             deidentifiedFiles = new Vector<File>();
     public static Hashtable<File, File> // Nifti result => Dicom source
@@ -80,13 +80,12 @@ public class DeidData {
     public static int multimatchingFlag = 0;
     public static Vector<Object> errorlog;
     public static int curFlag = 0;
-    public static String parentPath = "none";
+    public static String parentPath = "none"; //actually its an unused variable
     public static String anaPath = "/tmp/deid_output/fslchfiletypeOut";
     public static String dicomPath = "tmp/deid_output/dcm2niiOut";
     public static Vector<String> multimatchingNamelist;
     public static Hashtable<String, Integer> multinameSol = new Hashtable();
     public static Hashtable<String, String> multinameSolFile = new Hashtable();
-    ;
     public static Hashtable<String, String> IdTable;
     //this hashtable is to make sure all the longitudinal images belong to same subject have a same id.
     public static String[] selectedIdentifyingFields,

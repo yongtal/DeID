@@ -11,7 +11,9 @@ import dit.OpenImagewithMRIcron;
 import dit.ReSkullStrippingFrame;
 import dit.TextviewFrame;
 import dit.ViewHeaderFrame;
+import static dit.panels.LoadImagesPanel.model;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
@@ -32,10 +34,20 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 
 /**
@@ -52,210 +64,104 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
             this.y=y;
         }
     }
-    
-    
-     
-     
-     
+ 
     Point startPoint;
     Point endPoint;
     /**
      * Creates new form AuditPanel
      */
+    public static final DefaultTreeModel model = LoadImagesPanel.model;
+    //private javax.swing.JTree jTree;
     
     private ReSkullStrippingFrame redo;
     private NIHImage selectedFile = null;
     private int prevCursor = 0;
     private int bufferNum;
-    ///////////////////////////////////////
+    
+///////////////////////////////////////
     ////////////2.27
     private ViewHeaderFrame viewHeader;
     
     public AuditPanel() {
+
         initComponents();
         // if(DeidData.demographicData != DemographicTableModel.dummyModel)
       //  createFakenames();
+       
         jButtonViewMontage.setVisible(true);
         DEIDGUI.title = "Auditing";
         DEIDGUI.helpButton.setEnabled(true);
         bufferNum = (int) (java.lang.Runtime.getRuntime().freeMemory() / 20000000 / 2 / 2);
         //System.out.println("# of Buffer isssssssssssss " + bufferNum);
         LoggerWrapper.myLogger.log(Level.INFO, "# of Buffer is {0}", bufferNum);
-        ////////////////////////////////////////////
-        ///////////2.27 yongtal
         jButtonViewHeader.setEnabled(false);
         jButtonViewImage.setEnabled(false);
         //if (! DeidData.doDeface)
         //    jButton1.setEnabled(false);
         
         // Define the AuditJTable model                                                                                                                                                                                                                                                                                                                                   
-        imagesTable.setModel(new AbstractTableModel() {
-            // <editor-fold defaultstate="collapsed" desc="AuditTableModel">
-            
-            private String[] columnNames = new String[]{"Selected", "Image"};
-            
-            @Override
-            public int getRowCount() {
-                return DeidData.imageHandler.getInputFilesSize();
-            }
-            
-            @Override
-            public int getColumnCount() {
-                return columnNames.length;
-            }
-            
-            @Override
-            public String getColumnName(int i) {
-                return columnNames[i];
-            }
-            
-            @Override
-            public Class getColumnClass(int i) {
-                Class colClass;
-                switch (i) {
-                    case 0:
-                        colClass = Boolean.class;
-                        break;
-                    case 1:
-                        colClass = NIHImage.class;
-                        break;
-                    default:
-                        colClass = Object.class;
-                }
-                return colClass;
-            }
-            
-            @Override
-            public boolean isCellEditable(int row, int col) {
-                return (col == 0 ? true : false);
-            }
-            
-            @Override
-            public Object getValueAt(int row, int col) {
-                Object value;
-                switch (col) {
-                    case 0:
-                        value = DeidData.imageHandler.getInputFiles().get(row).isSeletecInJarFile();
-                        break;
-                    case 1:
-                        value =  DeidData.imageHandler.getInputFiles().get(row);
-                        break;
-                    default:
-                        value = "Error";
-                        break;
-                }
-                return value;
-            }
-            
-            @Override
-            public void setValueAt(Object o, int row, int col) {
-                if (col == 0) {
-                   DeidData.imageHandler.getInputFiles().get(row).setSeletecInJarFile( (Boolean) o);
-                }
-            }
-            // </editor-fold>
-        });
-        
-        //initCur(0, bufferNum);
+        jTree.setModel(model);
+        FileTreeCellRenderer renderer = new FileTreeCellRenderer();
+        renderer.setLeafIcon(UIManager.getIcon("FileView.fileIcon")); // used for leaf nodes
+        jTree.setCellRenderer(renderer);
+        jTree.setRootVisible(false); 
+        jTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         
         // Add a selection listener for enabling/disabling the "View Header" button
-        imagesTable.getSelectionModel().addListSelectionListener(
-                new ListSelectionListener() {
-                    // <editor-fold defaultstate="collapsed" desc="AuditTableSelectionListener">
-                    
-                    @Override
-                    public void valueChanged(ListSelectionEvent lse) {
-                        if (imagesTable.getSelectedRow() > -1) {
-                            jButtonViewHeader.setEnabled(true);
-                            jButtonViewImage.setEnabled(true);
-                        }
-                        if (lse.getValueIsAdjusting()) {
+        jTree.addTreeSelectionListener(new TreeSelectionListener() { 
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+
+                if (jTree.getSelectionCount() > 0 ) {
+                    TreePath path = jTree.getSelectionPath();
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) (path.getLastPathComponent()); 
+                    if (node.isLeaf()) {  
+                        jButtonViewHeader.setEnabled(true);
+                        jButtonViewImage.setEnabled(true);
+                        if (e.getNewLeadSelectionPath() != e.getOldLeadSelectionPath()) {
                             if(selectedFile != null){
                                 selectedFile.emptySet();
                             }
-                            int currCursor = imagesTable.getSelectedRow();
                             /*NIHImage*/ 
-                            selectedFile = DeidData.imageHandler.getInputFiles().get(currCursor);//DeidData.imageHandler.getInputFiles().get(imagesTable.getSelectedRow());
+                            selectedFile = (NIHImage)node.getUserObject();
                             //System.out.println("cursor is  fffff: " + currCursor);
-                        try {    
-                            ((NiftiDisplayPanel)imagePanel).setImage(selectedFile);
-                        } catch (Exception e){
-                            LoggerWrapper.myLogger.log(Level.SEVERE, "Error is {0}", e);
-                            DEIDGUI.log("Failed to load image", DEIDGUI.LOG_LEVEL.ERROR);
-
-                        
-                        }
-                        
-                       
-                        /*  
-                            if (Math.abs(currCursor - prevCursor) > 2*bufferNum) {
-                                removePre(prevCursor-bufferNum, prevCursor+bufferNum);
-                                initCur(currCursor-bufferNum, currCursor+bufferNum);
-                            } else if (currCursor > prevCursor) {
-                                        System.out.println(">>>");
-                                        removePre(prevCursor-bufferNum, currCursor-bufferNum);
-                                        initCur(prevCursor+bufferNum, currCursor+bufferNum);
-                            } else if (currCursor < prevCursor){
-                                        System.out.println("<<<<");
-                                        removePre(currCursor+bufferNum, prevCursor+bufferNum);
-                                        initCur(currCursor-bufferNum, prevCursor-bufferNum);        
-                            } 
-                           
-                          
-                            
-                            prevCursor = currCursor;
-                        */   //((NiftiDisplayPanel)imagePanel).reset();
-                          
+                            try {    
+                                ((NiftiDisplayPanel)imagePanel).setImage(selectedFile);
+                            } catch (Exception le){
+                                LoggerWrapper.myLogger.log(Level.SEVERE, "Error is {0}", le);
+                                DEIDGUI.log("Failed to load image", DEIDGUI.LOG_LEVEL.ERROR);                        
+                            }
                         }
                     }
-                    // </editor-fold>
-                });
-        
-        DEIDGUI.log("AuditPanel initialized");
-    }
-    /**
-     * @author Xuebo 
-     * double buffering
-     * remove previous buffer images 
-     * @param x previous cursor focus
-     * @param y current cursor focus
-     *     
-     */
-    
-    public void removePre(int x, int y) {  
-        System.out.println("x   y" + x + " "+ y);
-        System.out.println("remove executed");
+                }                        
+            }
+        });
 
-        for (int idx = Math.max(x, 0); idx < Math.min(y, DeidData.imageHandler.getInputFilesSize()); idx++) {
-            
-            DeidData.imageHandler.getInputFiles().get(idx).emptySet();
-        }
-    }
-    
-     /**
-     * @author Xuebo 
-     * double buffering
-     * init current buffer images 
-     * @param x previous cursor focus
-     * @param y current cursor focus
-     *     
-     */
-    
-    public void initCur(int x, int y) {  
-        System.out.println("init executed");
-        for (int idx = Math.max(x, 0); idx < Math.min(y, DeidData.imageHandler.getInputFilesSize()); idx++) {
-            //System.out.println("init fuyckkkk" + idx);
-            DeidData.imageHandler.getInputFiles().get(idx).initNifti();
-        }
+        DEIDGUI.log("AuditPanel initialized");  
     }
     
     
-    
-    
-    
-    
-    
-    
+    public class FileTreeCellRenderer extends DefaultTreeCellRenderer {
+        // <editor-fold defaultstate="collapsed">
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+            if (value instanceof DefaultMutableTreeNode) {
+                
+                value = ((DefaultMutableTreeNode)value).getUserObject();
+                if (value instanceof File && ((File) value).isDirectory()) {
+                        value = ((File) value).getName();
+                }
+                if (value instanceof NIHImage) {
+                    String newname = ((NIHImage) value).getTempPotision().toString();
+                    newname = newname.substring(newname.lastIndexOf(System.getProperty("file.separator"))+1);
+                    value = newname;
+                }
+            }
+            return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+        }
+        // </editor-fold>
+    }
+             
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -270,8 +176,6 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
         jLabel1 = new javax.swing.JLabel();
         jButtonViewDemo = new javax.swing.JButton();
         jButtonViewImage = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        imagesTable = new AuditJTable();
         jButtonViewHeader = new javax.swing.JButton();
         imagePanel = new NiftiDisplayPanel();
         sliceBar = new javax.swing.JSlider();
@@ -281,6 +185,7 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
         rightRotateBtn = new javax.swing.JButton();
         resetRotateBtn = new javax.swing.JButton();
         orientationLbl = new javax.swing.JLabel();
+        jScrollPane3 = new javax.swing.JScrollPane();
 
         jList1.setModel(new javax.swing.AbstractListModel() {
             String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
@@ -304,34 +209,6 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
                 jButtonViewImageActionPerformed(evt);
             }
         });
-
-        imagesTable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                { new Boolean(true), "File1"},
-                {null, "File2"},
-                { new Boolean(true), "File3"},
-                {null, "File4"}
-            },
-            new String [] {
-                "Selected", "File"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.Boolean.class, java.lang.Object.class
-            };
-            boolean[] canEdit = new boolean [] {
-                true, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        jScrollPane1.setViewportView(imagesTable);
 
         jButtonViewHeader.setText("View Image Header");
         jButtonViewHeader.setEnabled(false);
@@ -363,7 +240,7 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
         );
         imagePanelLayout.setVerticalGroup(
             imagePanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 32, Short.MAX_VALUE)
+            .add(0, 111, Short.MAX_VALUE)
         );
 
         sliceBar.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -411,6 +288,8 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
 
         orientationLbl.setText("<html>Drag the image to adjust orientation. <br> Click buttons to rotate image. </html>");
 
+        jScrollPane3.setViewportView(jTree);
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -420,33 +299,36 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .add(layout.createSequentialGroup()
-                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 403, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(18, 18, Short.MAX_VALUE)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                            .add(jScrollPane3)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
+                                .add(jButtonViewDemo)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jButtonViewMontage)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jButton1)))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 50, Short.MAX_VALUE)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                                .add(layout.createSequentialGroup()
-                                    .add(45, 45, 45)
-                                    .add(leftRotateBtn)
-                                    .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                    .add(resetRotateBtn)
-                                    .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                    .add(rightRotateBtn))
-                                .add(layout.createSequentialGroup()
-                                    .add(jButtonViewImage)
-                                    .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                    .add(jButtonViewHeader))
-                                .add(sliceBar, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .add(imagePanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 228, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                        .add(9, 9, 9))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
-                        .add(jButtonViewDemo)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jButtonViewMontage)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jButton1)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(orientationLbl, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())))
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                .add(orientationLbl, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap())
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                        .add(layout.createSequentialGroup()
+                                            .add(45, 45, 45)
+                                            .add(leftRotateBtn)
+                                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                            .add(resetRotateBtn)
+                                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                            .add(rightRotateBtn))
+                                        .add(layout.createSequentialGroup()
+                                            .add(jButtonViewImage)
+                                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                            .add(jButtonViewHeader))
+                                        .add(sliceBar, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .add(imagePanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 228, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                .add(9, 9, 9))))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -460,27 +342,27 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
                         .add(jButtonViewMontage)
                         .add(jButton1))
                     .add(orientationLbl, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(19, 19, 19)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(leftRotateBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(rightRotateBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(resetRotateBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .add(layout.createSequentialGroup()
-                        .add(imagePanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
+                        .add(19, 19, 19)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(leftRotateBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(rightRotateBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(resetRotateBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(imagePanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 111, Short.MAX_VALUE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(sliceBar, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                             .add(jButtonViewImage)
-                            .add(jButtonViewHeader))))
+                            .add(jButtonViewHeader)))
+                    .add(layout.createSequentialGroup()
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(jScrollPane3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
-    
-    
     
     private void jButtonViewImageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonViewImageActionPerformed
         /* if(jTableImages.getSelectedRow() >= 0){
@@ -488,8 +370,10 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
          * OpenFile(selectedFile);
          * }*/
         
-        if(imagesTable.getSelectedRow() >= 0){
-            File selectedFile =  DeidData.imageHandler.getInputFiles().get(imagesTable.getSelectedRow()).getTempPotision();
+        if(jTree.getSelectionModel().getSelectionCount() > 0){
+            TreePath path = jTree.getSelectionPath();
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) (path.getLastPathComponent()); 
+            File selectedFile =  ((NIHImage)node.getUserObject()).getTempPotision();
             OpenImagewithMRIcron openImage = new OpenImagewithMRIcron(selectedFile);
             openImage.run();
         }
@@ -508,11 +392,8 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
         
     }//GEN-LAST:event_jButtonViewDemoActionPerformed
         
-  
-    
-    
     private void sliceBarStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliceBarStateChanged
-        if(imagesTable.getSelectedRow() >= 0){
+        if(jTree.getSelectionModel().getSelectionCount() > 0){
             ((NiftiDisplayPanel)imagePanel).setSlice((float)sliceBar.getValue()/100f);
         }
     }//GEN-LAST:event_sliceBarStateChanged
@@ -558,15 +439,12 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
         // TODO add your handling code here:
         redo = new ReSkullStrippingFrame();
         redo.pack();
-        redo.setVisible(true);
-        
+        redo.setVisible(true);       
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void rightRotateBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rightRotateBtnActionPerformed
-
         ((NiftiDisplayPanel)imagePanel).setOrientationState( ((NiftiDisplayPanel)imagePanel).rotateClockwise());
-         ((NiftiDisplayPanel)imagePanel).setSlice(0.5f);
-
+        ((NiftiDisplayPanel)imagePanel).setSlice(0.5f);
     }//GEN-LAST:event_rightRotateBtnActionPerformed
 
     private void leftRotateBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_leftRotateBtnActionPerformed
@@ -579,9 +457,9 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
     }//GEN-LAST:event_resetRotateBtnActionPerformed
 
     private void imagePanelMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_imagePanelMouseEntered
-           Cursor cursor=Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR); 
-     //change cursor appearance to HAND_CURSOR when the mouse pointed on images
-           imagePanel.setCursor(cursor);    
+        Cursor cursor=Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR); 
+        //change cursor appearance to HAND_CURSOR when the mouse pointed on images
+        imagePanel.setCursor(cursor);    
     }//GEN-LAST:event_imagePanelMouseEntered
 
     private void imagePanelMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_imagePanelMousePressed
@@ -590,11 +468,11 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
     }//GEN-LAST:event_imagePanelMousePressed
 
     private void imagePanelMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_imagePanelMouseReleased
-        if(imagesTable.getSelectedRow() >= 0) { 
+        if(jTree.getSelectionModel().getSelectionCount() > 0) { 
         
             endPoint=new Point(evt.getX(),evt.getY());
               
-             float diffX=endPoint.x-startPoint.x;
+            float diffX=endPoint.x-startPoint.x;
             float diffY=endPoint.y-startPoint.y;
             
             if(diffX>0)
@@ -625,8 +503,10 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
     private void jButtonViewHeaderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonViewHeaderActionPerformed
         // TODO add your handling code here:
         //if (!ViewHeaderFrame.isExists) {
-        
-            NIHImage image = DeidData.imageHandler.getInputFiles().get(imagesTable.getSelectedRow());
+            TreePath path = jTree.getSelectionPath();
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) (path.getLastPathComponent()); 
+            NIHImage image =  (NIHImage)node.getUserObject();
+            //NIHImage image = DeidData.imageHandler.getInputFiles().get(imagesTable.getSelectedRow());
             viewHeader = new ViewHeaderFrame(image);      
             viewHeader.pack();
             viewHeader.setVisible(true);
@@ -634,9 +514,9 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
         //jButtonViewHeader.setEnabled(false);
     }//GEN-LAST:event_jButtonViewHeaderActionPerformed
     
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public static javax.swing.JPanel imagePanel;
-    public static javax.swing.JTable imagesTable;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButtonViewDemo;
     private javax.swing.JButton jButtonViewHeader;
@@ -644,8 +524,9 @@ public class AuditPanel extends javax.swing.JPanel implements WizardPanel {
     private javax.swing.JButton jButtonViewMontage;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JList jList1;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    public static final javax.swing.JTree jTree = new javax.swing.JTree();
     private javax.swing.JButton leftRotateBtn;
     private javax.swing.JLabel orientationLbl;
     private javax.swing.JButton resetRotateBtn;

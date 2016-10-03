@@ -484,7 +484,7 @@ public class DEIDGUI extends javax.swing.JFrame {
         setMinimumSize(new java.awt.Dimension(512, 512));
 
         continueButton.setForeground(new java.awt.Color(51, 51, 255));
-        continueButton.setText("Next>>");
+        continueButton.setText("Next>");
         continueButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 continueButtonActionPerformed(evt);

@@ -1,15 +1,21 @@
 package dit;
 
+import dit.panels.LoadImagesPanel;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import niftijlib.Nifti1Dataset;
 
 /**
@@ -32,25 +38,29 @@ public class NIHImageHandler {
         return _inputFiles;
     }
     LoggerWrapper loggerWrapper = LoggerWrapper.getInstance();
-    public void addFile(File file) {
+    
+      public boolean addFile(File file) {
         NIHImage image = new NIHImage(file);
         if (image.getImageFormat().equals("hdr")) {
             File secondPart = new File(image.getImageName() + ".img");
             if (!secondPart.exists()) {
-                return;
+                return false;
             }
         }
 
         if (image.getImageFormat().equals("img")) {
             File secondPart = new File(image.getImageName() + ".hdr");
             if (!secondPart.exists()) {
-                return;
+                return false;
             }
         }
 
         if (!isExistInputFile(file)) {
             _inputFiles.add(image);
-            loggerWrapper.myLogger.fine(image.getStoredPotistion().getAbsolutePath());
+            return true;
+        }
+        else {
+            return false;
         }
     }
 
@@ -83,6 +93,10 @@ public class NIHImageHandler {
 
     public void removeAll(List<File> asList) {
         _inputFiles.removeAll(asList);
+    }
+    
+    public boolean remove(NIHImage image) {
+        return _inputFiles.remove(image);
     }
 
     public NIHImage findImageByDisplayName(String displayName) {
@@ -244,5 +258,28 @@ public class NIHImageHandler {
                 }
             }
         }
+    }
+    
+    /**
+     * after remove selected images, update TreeModel.
+     */
+    public void updateTreeModel() {
+        DefaultTreeModel model = LoadImagesPanel.model;
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode)model.getRoot();
+        Enumeration e = root.depthFirstEnumeration();
+        while (e.hasMoreElements()) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
+            if (node.isLeaf()) {
+                try {
+                   NIHImage image = (NIHImage)node.getUserObject();
+                   if (! _inputFiles.contains(image)) {
+                        model.removeNodeFromParent(node);
+                    }
+                } catch (java.lang.ClassCastException ex) {
+                    model.removeNodeFromParent(node);
+                }
+            }
+        }
+        model.reload();
     }
 }

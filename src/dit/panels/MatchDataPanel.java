@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.tree.DefaultTreeModel;
 
 /**
  *
@@ -21,6 +22,7 @@ public class MatchDataPanel extends javax.swing.JPanel implements WizardPanel {
     private removeImageFrame rif;
     private ManualCorrectTableModel cmodel;
     public static HashMap<String, String> displayTofile;
+   
 
     /**
      * Creates new form MatchDataPanel
@@ -283,7 +285,8 @@ public class MatchDataPanel extends javax.swing.JPanel implements WizardPanel {
             if (ii == JOptionPane.OK_OPTION) {
                 for (int s = 0; s < selectNum; s++) {
                     DeidData.imageHandler.getInputFiles().remove(selection[s] - s);
-                }
+                    DeidData.imageHandler.updateTreeModel();
+                }               
             } else {
                 return;
             }
@@ -451,4 +454,5 @@ public class MatchDataPanel extends javax.swing.JPanel implements WizardPanel {
             }
         }
     }
+
 }

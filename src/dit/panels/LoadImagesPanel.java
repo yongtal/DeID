@@ -1,27 +1,35 @@
 package dit.panels;
 
-import dit.DEIDGUI;
 import dit.*;
+import dit.DEIDGUI;
 import java.awt.Component;
 import java.awt.Container;
-import java.io.File;
 import java.io.*;
-import javax.swing.JFileChooser;
-import javax.swing.JPanel;
-import java.util.Vector;
-import java.util.List;
+import java.io.File;
 import java.lang.String;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Vector;
 import java.util.logging.Level;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.*;
 
 /**
  *
  * @author christianprescott
  */
 public class LoadImagesPanel extends JPanel implements WizardPanel {
+    
+    public final static DefaultTreeModel model = new DefaultTreeModel(new DefaultMutableTreeNode("")) ;
     
     /**
      * Creates new form LoadImagesPanel
@@ -30,21 +38,24 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
         initComponents();
         DEIDGUI.title = "Load Images";
         
-        
         lblImages.setText(DeidData.imageHandler.getInputFiles().size()+" images loaded");
-        jListImages.setListData(DeidData.imageHandler.getInputFiles());
         cbxDoDeface.setSelected(!DeidData.doDeface);
         
         btnRemovedAll.setVisible(false);
-        
-        jListImages.addListSelectionListener(new ListSelectionListener(){
-            @Override  public void valueChanged(ListSelectionEvent e){
-                jLabel2.setText(jListImages.getSelectedValues().length+" line(s) selected");
                 
+        jTree.setModel(model);
+        FileTreeCellRenderer renderer = new FileTreeCellRenderer();
+        renderer.setLeafIcon(UIManager.getIcon("FileView.fileIcon")); // used for leaf nodes
+        jTree.setCellRenderer(renderer);
+        jTree.setRootVisible(false);    
+        jTree.addTreeSelectionListener(new TreeSelectionListener() { //It's not the real num of selected files
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {               
+                int arr[] = jTree.getSelectionRows();
+                jLabel2.setText(arr.length+" line(s) selected");
             }
-        }
-                
-                );
+        });
+        
         DEIDGUI.log("LoadImagesPanel initialized");
     }
     
@@ -59,8 +70,6 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
 
         jLabel1 = new javax.swing.JLabel();
         btnAddFiles = new javax.swing.JButton();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jListImages = new javax.swing.JList();
         jButtonRemove = new javax.swing.JButton();
         btnSelectAll = new javax.swing.JButton();
         btnRemovedAll = new javax.swing.JButton();
@@ -68,6 +77,8 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
         lblImages = new javax.swing.JLabel();
         btnAddDir = new javax.swing.JButton();
         cbxDoDeface = new javax.swing.JCheckBox();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTree = new javax.swing.JTree();
 
         jLabel1.setText("<html><p>Select images or directories of images to de-identify. Images may be in DICOM, Analyze, or NIfTI format. DICOM and Analyze files will be converted to NIfTI.</p><p>&nbsp;</p></html>");
 
@@ -77,8 +88,6 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
                 btnAddFilesActionPerformed(evt);
             }
         });
-
-        jScrollPane2.setViewportView(jListImages);
 
         jButtonRemove.setText("Remove Selected");
         jButtonRemove.addActionListener(new java.awt.event.ActionListener() {
@@ -120,36 +129,39 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
             }
         });
 
+        jScrollPane1.setViewportView(jTree);
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jScrollPane2)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(jScrollPane1)
+                    .add(layout.createSequentialGroup()
                         .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                         .add(134, 134, 134))
-                    .add(layout.createSequentialGroup()
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 207, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(layout.createSequentialGroup()
                                 .add(btnAddFiles)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnAddDir)))
-                        .add(0, 0, 0)
+                                .add(btnAddDir))
+                            .add(layout.createSequentialGroup()
+                                .add(cbxDoDeface, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)))
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(lblImages, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
+                            .add(layout.createSequentialGroup()
+                                .add(0, 0, Short.MAX_VALUE)
+                                .add(btnSelectAll, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 110, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jButtonRemove))
+                            .add(lblImages, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
                             .add(layout.createSequentialGroup()
                                 .add(98, 98, 98)
-                                .add(btnRemovedAll, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                    .add(layout.createSequentialGroup()
-                        .add(cbxDoDeface, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(77, 77, 77)
-                        .add(btnSelectAll, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 110, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jButtonRemove)))
+                                .add(btnRemovedAll, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -163,12 +175,12 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
                     .add(btnRemovedAll)
                     .add(btnAddDir))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 263, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel2)
                     .add(lblImages))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jScrollPane2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(cbxDoDeface)
                     .add(jButtonRemove)
@@ -177,56 +189,51 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
     
-    private void ReadAllFile(Vector<File> list, String filePath) {
-        File f = null;
-        f = new File(filePath);
-        File[] files = f.listFiles(); // get all files
-        for (File file : files) {
-            if(file.isDirectory()) {
-                
-                ReadAllFile(list, file.getAbsolutePath());
-            } else {
-                if (file.getName().endsWith(".nii")||file.getName().endsWith(".nii.gz")||file.getName().endsWith(".dcm")||file.getName().endsWith(".img")||file.getName().endsWith(".hdr"))
-                    list.add(file);
-            }
-        }
-        //for(int i=0; i< list.size(); i++) {
-        //  System.out.println(list.get(i).getAbsolutePath());
-        //}
-        
-    }
     //private Vector<File> displayedFiles = new Vector<File>();
     private void btnAddFilesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddFilesActionPerformed
         final javax.swing.JFileChooser fc = new JFileChooser();
-         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         LoadImage(fc);   
-        
     }//GEN-LAST:event_btnAddFilesActionPerformed
     
     private void jButtonRemoveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRemoveActionPerformed
-        List selection = jListImages.getSelectedValuesList();
-        DeidData.imageHandler.removeAll(selection);
-        jListImages.setListData(DeidData.imageHandler.getInputFiles());
-        DEIDGUI.log("Removed " + selection.size() + " input images");
+       
+        DefaultMutableTreeNode node;
+        TreePath[] paths = jTree.getSelectionPaths();
+        int num = 0;
+        for (int i = 0; i < paths.length; i++) {
+          node = (DefaultMutableTreeNode) (paths[i].getLastPathComponent()); 
+          removeRecursive(node, num);
+        }
+        //printAllImages();
+        reVaildateTreeModel();
+        DEIDGUI.log("Removed " + num + " input images");
         jLabel2.setText("No line is selected.");
         lblImages.setText(DeidData.imageHandler.getInputFilesSize()+" images loaded");
+        
     }//GEN-LAST:event_jButtonRemoveActionPerformed
     
     private void btnSelectAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSelectAllActionPerformed
         // TODO add your handling code here:
-        int ind[];
-        ind = new int[DeidData.imageHandler.getInputFiles().size()];
-        for(int i = 0; i< DeidData.imageHandler.getInputFiles().size();i++ )
-        {
-            ind[i] = i;            
-        }
-        jListImages.setSelectedIndices(ind);
-        jLabel2.setText(DeidData.imageHandler.getInputFiles().size()+" line(s) selected.");
+        TreeNode root = (TreeNode) jTree.getModel().getRoot();
+        selectAll(jTree, new TreePath(root));
+        jLabel2.setText(DeidData.imageHandler.getInputFiles().size()+" line(s) selected."); 
     }//GEN-LAST:event_btnSelectAllActionPerformed
     
     private void btnRemovedAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemovedAllActionPerformed
         // TODO add your handling code here:
-        jListImages.clearSelection();
+        TreeNode root = (TreeNode) jTree.getModel().getRoot();
+        selectAll(jTree, new TreePath(root));
+        DefaultMutableTreeNode node;
+        TreePath[] paths = jTree.getSelectionPaths();
+        int num = 0;
+        for (int i = 0; i < paths.length; i++) {
+          
+          node = (DefaultMutableTreeNode) (paths[i].getLastPathComponent());         
+          removeRecursive(node, num);
+        }
+        //printAllImages();
+        reVaildateTreeModel();
         jLabel2.setText("No line is selected.");
     }//GEN-LAST:event_btnRemovedAllActionPerformed
     
@@ -258,8 +265,8 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
     private javax.swing.JButton jButtonRemove;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JList jListImages;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTree jTree;
     private javax.swing.JLabel lblImages;
     // End of variables declaration//GEN-END:variables
     
@@ -298,6 +305,9 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
         return new UserPanel();
     }
     
+    public final DefaultTreeModel getModel() {
+        return model;
+    }
     
     //this function make file selection textfield and label do not display
     private void hideTextfield(Component[] jc){
@@ -322,9 +332,7 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
     
     private void LoadImage(JFileChooser fc)
     {
-        
         fc.setMultiSelectionEnabled(true);
-       
         fc.setAcceptAllFileFilterUsed(false);
         fc.addChoosableFileFilter(new ImageFilter());
         String dirrec;
@@ -333,7 +341,6 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
             FileReader fr = new FileReader(filename);
             BufferedReader br = new BufferedReader(fr);
             dirrec = br.readLine();
-    ;
             if (dirrec!= null)
             {
                 fc.setCurrentDirectory(new File(dirrec));
@@ -348,25 +355,13 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File[] selectedFiles = fc.getSelectedFiles();
             //angelo added
-            for (int idx = 0; idx < selectedFiles.length; idx ++)
-            {
-                if(selectedFiles[idx].isDirectory())
-                {
-                    Vector<File> imgfiles = new Vector<File>();
-                    ReadAllFile(imgfiles, selectedFiles[idx].getAbsolutePath());
-                    DeidData.parentPath = selectedFiles[idx].getParentFile().getAbsolutePath();
-                    DeidData.addInputFile(imgfiles);
-                }
-                else{
-                    DeidData.addInputFile(selectedFiles[idx]);
-                   // DeidData.parentPath="none";
-                }
+            DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+            for (File file : selectedFiles) {
+                addRecusive(file, root);             
             }
-            jListImages.setListData(DeidData.imageHandler.getInputFiles());
+            model.reload();
             
             String dir = fc.getSelectedFile().getParent();
-            
-            
             if (!filename.exists()){
                 //try{
                     filename.mkdirs();
@@ -378,7 +373,6 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
             }
             try
             {
-                
                 RandomAccessFile  pathfile = new RandomAccessFile (filename,"rw");
                 pathfile.writeBytes(dir);
             }catch(IOException e)
@@ -392,4 +386,112 @@ public class LoadImagesPanel extends JPanel implements WizardPanel {
             lblImages.setText(DeidData.imageHandler.getInputFilesSize() +" image(s) loaded.");
         }
     }
+   
+    private void selectAll(JTree tree, TreePath parent) {
+        TreeNode node = (TreeNode) parent.getLastPathComponent();
+        if (node.getChildCount() >= 0) {
+          for (Enumeration e = node.children(); e.hasMoreElements();) {
+            TreeNode n = (TreeNode) e.nextElement();
+            TreePath path = parent.pathByAddingChild(n);
+            selectAll(tree, path);
+          }
+        }
+        tree.expandPath(parent);
+        tree.setSelectionInterval(0, tree.getRowCount());
+        // tree.collapsePath(parent);
+  }
+    
+    private void removeRecursive(DefaultMutableTreeNode node, int num) {
+        File file = new File(node.getUserObject().toString());
+        
+        if (file.isDirectory()){
+            while (node.getChildCount() > 0){
+                removeRecursive((DefaultMutableTreeNode)node.getFirstChild(), num); 
+            }
+            try{
+                model.removeNodeFromParent(node);
+            } catch (IllegalArgumentException e){}
+        }
+        else {
+            if (isImageFile(file)){
+                DeidData.imageHandler.remove((NIHImage)node.getUserObject());
+                num++;
+            }
+            try{
+                model.removeNodeFromParent(node);
+            } catch (IllegalArgumentException e){}
+        }    
+    }
+     
+    /**
+     * make sure no empty folder on leaf node 
+     */
+    private void reVaildateTreeModel(){ 
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        Enumeration e = root.depthFirstEnumeration();
+        while (e.hasMoreElements()) {
+            DefaultMutableTreeNode nextnode = (DefaultMutableTreeNode) e.nextElement();
+            if (nextnode.isLeaf()){
+                File file = new File(nextnode.getUserObject().toString());
+                if ( file.isDirectory()&& nextnode.getParent() != null){
+                        model.removeNodeFromParent(nextnode);
+                }
+            }
+        }
+        model.reload();
+    }
+    
+    private boolean isImageFile(File file){
+        return (file.getName().endsWith(".nii")||file.getName().endsWith(".nii.gz")||file.getName().endsWith(".dcm")||file.getName().endsWith(".img")||file.getName().endsWith(".hdr")) ;
+    
+    }
+    
+    protected void addRecusive(File file, DefaultMutableTreeNode parent) {
+        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(file);
+        if (file.isDirectory() && file.listFiles().length > 0){
+            model.insertNodeInto(newNode, parent, parent.getChildCount());
+            File[] files = file.listFiles();
+            for (File ff : files){
+                addRecusive(ff, newNode);
+            }
+        }
+        else {
+            if ( isImageFile(file)  && DeidData.addInputFile(file)){
+
+                newNode = new DefaultMutableTreeNode(DeidData.imageHandler.getInputFiles().get(DeidData.imageHandler.getInputFilesSize()-1));
+                model.insertNodeInto(newNode, parent, parent.getChildCount());
+                
+                //display newNode
+                TreeNode[] nodes = model.getPathToRoot(newNode);
+                TreePath path = new TreePath(nodes);
+                jTree.scrollPathToVisible(path);   
+            }
+        }
+    }
+    
+    public class FileTreeCellRenderer extends DefaultTreeCellRenderer {
+
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+            if (value instanceof DefaultMutableTreeNode) {
+                value = ((DefaultMutableTreeNode)value).getUserObject();
+                
+                if (value instanceof File && ((File) value).isDirectory()) {
+                        value = ((File) value).getName();
+                }
+                if (value instanceof NIHImage) {
+                    String fullname = ((NIHImage) value).getImageName();
+                    String imageName;
+                    try {
+                        imageName = fullname.substring(fullname.lastIndexOf(File.separator)+1);
+                        value = imageName;
+                    }   catch(StringIndexOutOfBoundsException e){
+                        value = fullname;
+                    }
+                }
+            }
+            return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+        }
+    }
+    
 }

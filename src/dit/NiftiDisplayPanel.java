@@ -130,7 +130,7 @@ public class NiftiDisplayPanel extends JPanel {
 
     public void setImage(final NIHImage nihimage) {
         //nihimage.clearData();
-        
+      if(nihimage != null) {
         nihimage.initNifti();
         File image=nihimage.getTempPotision();
         curNIHImage=nihimage;
@@ -158,6 +158,7 @@ public class NiftiDisplayPanel extends JPanel {
             }
             //
         }
+      }  
     }
 
     public void setOrientationState(OrientationState state) {

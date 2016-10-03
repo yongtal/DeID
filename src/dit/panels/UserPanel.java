@@ -142,8 +142,7 @@ public class UserPanel extends javax.swing.JPanel implements WizardPanel{
     public WizardPanel getNextPanel() {
         DeidData.UserFullName = jTextFieldName.getText().trim();
         DeidData.UserInstitution = jTextFieldInstitution.getText().trim();
-       
-        
+               
         if(DeidData.UserFullName.isEmpty() || DeidData.UserInstitution.isEmpty()){
             DEIDGUI.log("One or more user data fields are empty", DEIDGUI.LOG_LEVEL.ERROR);
             throw new IllegalStateException("One or more user data fields are empty");

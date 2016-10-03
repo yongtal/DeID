@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 import javax.swing.JPasswordField;
+import javax.swing.tree.TreeNode;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
@@ -308,6 +309,40 @@ public class TransferProgressPanel extends javax.swing.JPanel implements WizardP
 
     private boolean createTar() {
         try {
+            TarMaker tm = new TarMaker(tarFile);      
+            //TreeNode root = (TreeNode)LoadImagesPanel.model.getRoot();
+            tm.tarTree(LoadImagesPanel.model);
+            
+            //add montage File
+            File targetFile = new File(DeidData.outputPath + "montage.jpg");
+            tm.addFile(targetFile);
+            //System.out.println("Sucessful add montage file to tarFile!");
+            
+            tm.addFile(logFile);
+            
+            //add deidentifideDemoFile
+            if (!DeidData.isNoData) {
+                tm.addFile(DeidData.deidentifiedDemoFile);
+                System.out.println("Writing deid Data File Sucess!");
+            }
+            
+            DEIDGUI.log("Successfully created " + tarFile.getAbsolutePath());
+            tm.close();
+            String filetogz = tarFile.getAbsolutePath().toString();
+            if (gzipfile(filetogz, filetogz + ".gz")) {
+                tarFileO = tarFile;
+                tarFile = new File(filetogz + ".gz");
+            }
+        } catch (IOException ex) {
+            DEIDGUI.log("Error creating tarball, file may be damaged or "
+                    + "incomplete", DEIDGUI.LOG_LEVEL.WARNING);
+            return false;
+        }
+        return true;
+    }
+    
+    private boolean createTar(int a) {
+        try {
             TarMaker tm = new TarMaker(tarFile);
 
             for (NIHImage image : DeidData.imageHandler.getInputFiles()) {
@@ -374,10 +409,11 @@ public class TransferProgressPanel extends javax.swing.JPanel implements WizardP
                     + "incomplete", DEIDGUI.LOG_LEVEL.WARNING);
             return false;
         }
-
         return true;
     }
 
+    
+    
     private boolean gzipfile(String gzfile, String desfile) {
         boolean success = true;
         try {
